@@ -1,0 +1,4 @@
+#!/usr/bin/with-contenv bash
+
+# CMD ["named", "-c", "/etc/bind/named.conf", "-g", "-u", "named"]
+exec /usr/sbin/named -4 -c /etc/bind/named.conf -u bind -f

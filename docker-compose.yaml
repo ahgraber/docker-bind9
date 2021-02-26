@@ -1,0 +1,13 @@
+# dockerfile for testing build only
+version: '3.7'
+
+services:
+  bind9:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TARGETPLATFORM: 'linux/amd64'
+        # TARGETPLATFORM: 'linux/arm64'
+        # TARGETPLATFORM: 'linux/arm32/v7'
+    image: bind9:test
