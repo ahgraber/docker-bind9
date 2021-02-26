@@ -12,6 +12,7 @@ RUN apt-get update \
         bind9 \
         bind9-doc \
         dnsutils \
+        nano \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
               /tmp/* \
@@ -23,16 +24,20 @@ RUN chmod +x /tmp/install-s6.sh \
     && /tmp/install-s6.sh ${TARGETPLATFORM} \
     && rm -rf /tmp/*
 
+# standard DNS ports
 EXPOSE 53/udp 53/tcp 
-# EXPOSE 953/tcp
+# for RNDC (remote name daemon control)
+EXPOSE 953/tcp  
 
 RUN mkdir -p \
-    /config
+    /config \
     /defaults \
     /etc/bind \
-    /var/cache/bind
+    /var/cache/bind \
+    /var/lib/bind
 
-VOLUME /config
+VOLUME /config/logs
+VOLUME /config/bind
 
 # # create initial user
 # RUN groupmod -g 1000 users && \

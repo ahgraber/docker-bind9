@@ -6,66 +6,40 @@ echo -e "Variables set:\\n\
 PUID=${PUID}\\n\
 PGID=${PGID}\\n\
 TZ=${TZ}\\n\
-ZONE=${ZONE}\\n\
-RZONE=${RZONE}\\n\
-FWD1=${FWD1}\\n\
-FWD2=${FWD2:-''}\\n\
 "
-
-# Sanitize variables
-SANED_VARS=( FWD1 FWD2 RZONE ZONE )
-for i in "${SANED_VARS[@]}"
-do
-  export echo "$i"="${!i//\"/}"
-  export echo "$i"="$(echo "${!i}" | tr '[:upper:]' '[:lower:]')"
-done
-
-# Check to make sure that the required variables are set
-[[ -z "${ZONE}" ]] && \
-  echo "Please pass your DNS ZONE as an environment variable in your docker run command. See README for more details." && \
-  sleep infinity
-[[ -z "${RZONE}" ]] && \
-  echo "Please pass your DNS Reverse ZONE as an environment variable in your docker run command. See README for more details." && \
-  sleep infinity
-[[ -z "${FWD1}" ]] && \
-  echo "Please pass an upstream dns servers to FWD1 as an environment variable in your docker run command. See README for more details." && \
-  sleep infinity
 
 #############################################
 ######### Make our folders and links ########
 #############################################
-mkdir -p /config/{log/bind} 
-mkdir -p /config/bind/conf  # /etc/bind
-mkdir -p /config/bind/lib  # /var/lib/bind
+mkdir -p /config/{log/bind,bind/conf,bind/lib} 
+# mkdir -p /config/bind/conf  # /etc/bind
+# mkdir -p /config/bind/lib  # /var/lib/bind
 
 # Link logs
 echo "Linking /config/log/bind9 -> /var/log/bind ..."
 ln -s /config/log/bind /var/log/bind
 
-# Copy named.conf from defaults not already in /config
-[[ ! -f /config/etc/bind/named.conf ]] && \
-  echo "Copying default named.conf /config/etc/bind." && \
-	cp -n /defaults/named.conf /config/bind/conf/
 
-  # configure named.conf per environmental variables
-  sed -i 's/example.com/${ZONE}/g' /defaults/named.conf
-  sed -i 's/10.in-addr.arpa/${RZONE}.in-addr.arpa/g' /defaults/named.conf
-  sed -i 's/8.8.8.8/${FWD1}/g' /defaults/named.conf
-  sed -i 's/8.8.4.4/${FWD2}/g' /defaults/named.conf
+# If files exist in /var/lib bind, copy to config
+# otherwise populate from defaults
+if [ "$(ls -A /var/lib/bind)" ]; then
+  echo "Copying existing files from /var/lib/bind to /config/bind/conf ..." && \
+	cp -n /etc/bind/* /config/bind/conf
+else
+  echo "Copying default bind9 init files to /config/bind/conf ..." && \
+	cp -n /defaults/bind/* /config/bind/conf/
+fi
 
 # Link /config/lib/bind
 echo "Linking /config/conf -> /etc/bind ..."
+rm -rf /etc/bind
 ln -s /config/bind/conf /etc/bind
 
-# Copy zone/rzone from defaults not already in /config
-# rzone will always just tag along
-[[ ! -f /config/bind/lib/zone.db ]] && \
-  echo "Copying default zone.db and rzone.db to /config..." && \
-	cp -n /defaults/zone.db /config/bind/lib
-  cp -n /defaults/rzone.db /config/bind/lib
 
-  # configure per environmental variables
-
+# If files exist in /var/lib bind, copy to config
+[[ "$(ls -A /var/lib/bind)" ]] && \
+  echo "Copying existing files from /var/lib/bind to /config/bind/lib ..." && \
+	cp -n /var/lib/bind/* /config/bind/lib
 
 # Link /config/lib/bind
 echo "Linking /config/bind/lib -> /var/lib/bind ..."
@@ -74,6 +48,7 @@ mkdir -p /var/lib/bind
 ln -s /config/bind/lib /var/lib/bind
 # rm /etc/crontabs/*
 # cp /config/crontabs/* /etc/crontabs/
+
 
 # # change permissions on mount volume
 # chown -R abc:abc /config
