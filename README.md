@@ -6,7 +6,7 @@ Dockerfile to run BIND9 as Authoritative NameServer.  This container will get BI
 
 The project is built with Docker Buildx to support multiple architectures such as `amd64` and `arm64`. 
 
-Simply pulling `ahgraber/certbot_only` should retrieve the correct image for your arch, but you can also pull specific arch images via tags.
+Simply pulling `ninerealmlabs/bind9` should retrieve the correct image for your arch, but you can also pull specific arch images via tags.
 
 The architectures supported by this image are:
 
@@ -28,21 +28,19 @@ Compatible with docker-compose v3 schemas.
 ---
 version: "3.7"
 services:
-  swag:
-    image: ahgraber/certbot_only:latest
-    container_name: certbot
+  bind9:
+    image: ninerealmlabs/bind9:latest
+    container_name: bind9
     environment:
       - TZ=Europe/London
-      - ZONE=yourdomain.url
-      - RZONE=10  # or 172.16 or 192.168
-      - FWD1=1.1.1.1
-      - FWD2=1.0.0.1
     volumes:
-      - /path/to/appdata/config:/config/bind
+      - /path/to/appdata/config/conf:/config/bind/conf
+      - /path/to/appdata/config/lib:/config/bind/lib
       - /path/to/appdata/logs:/config/logs
     ports:
-      - 443:443
-      - 80:80 #optional
+      - 53:53/udp
+      - 53:53/tcp
+      - 953:953  # for RNDC (remote name daemon control)
     restart: unless-stopped
 ```
 
@@ -52,10 +50,6 @@ Container images are configured using parameters passed at runtime (such as thos
 | Parameter | Function |
 | :----: | --- |
 | `TZ=Europe/London` | Specify a timezone to use - e.g., Europe/London. |
-| `ZONE: yourdomain.url` | Namespace for which to act as Authoritative DNS server. |
-| `RZONE: 10` | Reverse zone for dns lookups - i.e., internal ip range. |
-| `FWD1: 1.1.1.1` | Primary upstream DNS. |
-| `FWD2: 1.0.0.1` | Secondary upstream DNS. |
 
 ## Volumes
 ### Notes on volume mapping
@@ -78,15 +72,15 @@ Below are the instructions for updating containers:
 
 ### Via Docker Compose
 * Update all images: `docker-compose pull`
-  * or update a single image: `docker-compose pull certbot_only`
+  * or update a single image: `docker-compose pull bind9`
 * Let compose update all containers as necessary: `docker-compose up -d`
-  * or update a single container: `docker-compose up -d swag`
+  * or update a single container: `docker-compose up -d bind9`
 * You can also remove the old dangling images: `docker image prune`
 
 ### Via Docker Run
-* Update the image: `docker pull ahgraber/certbot_only`
-* Stop the running container: `docker stop certbot_only`
-* Delete the container: `docker rm certbot_only`
+* Update the image: `docker pull ninerealmlabs/bind9`
+* Stop the running container: `docker stop bind9`
+* Delete the container: `docker rm bind9`
 * Recreate a new container with the same docker run parameters as instructed above (if mapped correctly to a host folder, your `/config` folder and settings will be preserved)
 * You can also remove the old dangling images: `docker image prune`
 
@@ -96,13 +90,13 @@ If you want to make local modifications to these images for development purposes
 
 With Docker Compose for single testing:
 ```
-git clone https://github.com/ahgraber/docker-certbot-only.git
-cd docker-certbot_only
+git clone https://github.com/ninerealmlabs/docker-certbot-only.git
+cd docker-bind9
 docker-compose build
 ```
 
 With [Docker buildx](https://docs.docker.com/buildx/working-with-buildx/) for multiarch support:
 ```
-git clone https://github.com/ahgraber/docker-certbot-only.git
-cd docker-certbot_only
-bash ./scripts/buildx.sh --tag {REPOSITORY}/certbot_only:{TAG}
+git clone https://github.com/ninerealmlabs/docker-certbot-only.git
+cd docker-bind9
+bash ./scripts/buildx.sh --tag {REPOSITORY}/bind9:{TAG}

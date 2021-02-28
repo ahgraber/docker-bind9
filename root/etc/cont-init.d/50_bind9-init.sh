@@ -1,28 +1,29 @@
 #!/usr/bin/with-contenv bash
-# cribbed from https://github.com/linuxserver/docker-swag/blob/master/root/etc/cont-init.d/50-config
 
-# Display variables for troubleshooting
-echo -e "Variables set:\\n\
-PUID=${PUID}\\n\
-PGID=${PGID}\\n\
-TZ=${TZ}\\n\
-"
+# # Display variables for troubleshooting
+# echo -e "Variables set:\\n\
+# PUID=${PUID}\\n\
+# PGID=${PGID}\\n\
+# TZ=${TZ}\\n\
+# "
 
 #############################################
 ######### Make our folders and links ########
 #############################################
-mkdir -p /config/{log/bind,bind/conf,bind/lib} 
-# mkdir -p /config/bind/conf  # /etc/bind
-# mkdir -p /config/bind/lib  # /var/lib/bind
+mkdir -p \
+  /config/log \
+  /config/bind/conf \
+  /config/bind/lib
 
 # Link logs
 echo "Linking /config/log/bind9 -> /var/log/bind ..."
-ln -s /config/log/bind /var/log/bind
+rm -rf /var/log/bind
+ln -s /config/log /var/log/bind
 
 
 # If files exist in /var/lib bind, copy to config
 # otherwise populate from defaults
-if [ "$(ls -A /var/lib/bind)" ]; then
+if [[ "$(ls -A /var/lib/bind)" ]]; then
   echo "Copying existing files from /var/lib/bind to /config/bind/conf ..." && \
 	cp -n /etc/bind/* /config/bind/conf
 else
